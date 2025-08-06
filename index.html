@@ -3,130 +3,120 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>$AIR Clicker</title>
+  <title>$AIR Clicker Game</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
   <style>
     body {
-      margin: 0;
-      padding: 0;
-      background: #000;
-      color: #00ffff;
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Orbitron', sans-serif;
+      background: linear-gradient(to bottom right, #1a1a2e, #16213e);
+      color: #fff;
       text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
+      padding: 2em;
     }
-
     h1 {
-      margin-bottom: 0.3em;
+      font-size: 2.2em;
+      margin-bottom: 10px;
     }
-
-    #coin {
-      font-size: 2em;
-      margin: 0.5em 0;
-    }
-
-    #clickImage {
+    #click-image {
       width: 180px;
       height: 180px;
-      border-radius: 20px;
+      border-radius: 50%;
       cursor: pointer;
-      box-shadow: 0 0 20px #00ffff88;
       transition: transform 0.1s ease;
+      box-shadow: 0 0 15px #00f2fe;
     }
-
-    #clickImage:active {
-      transform: scale(1.08);
+    #click-image:active {
+      transform: scale(1.1);
     }
-
-    button {
-      background: #00ffff;
-      color: #000;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 12px;
-      font-size: 1em;
-      margin-top: 1em;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-
-    button:hover {
-      background: #00dddd;
-    }
-
-    #timer {
-      margin-top: 1em;
+    .stats {
       font-size: 1.2em;
+      margin-top: 20px;
     }
-
-    .score-box {
-      margin-top: 1em;
+    button {
+      padding: 10px 20px;
+      margin-top: 20px;
       font-size: 1em;
+      border: none;
+      border-radius: 10px;
+      background-color: #00adb5;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background-color: #00f2fe;
     }
   </style>
 </head>
 <body>
   <h1>$AIR Clicker</h1>
-  <div id="coin">0 $AIR</div>
-  <img id="clickImage" src="https://i.imgur.com/GKZe5wZ.jpeg" alt="Clicker Image" />
-  <button onclick="upgrade()">Upgrade (+2 per click)</button>
-  <div id="timer">⏱️ 60 detik</div>
-  <div class="score-box">🎯 High Score: <span id="highScore">0</span></div>
-  <button onclick="restartGame()">🔄 Restart</button>
+  <p>Time Left: <span id="time">60</span> seconds</p>
+  <img id="click-image" src="https://i.imgur.com/GKZe5wZ.jpeg" alt="Click to earn $AIR" />
+  <div class="stats">
+    <p>$AIR Collected: <span id="score">0</span></p>
+    <p>High Score: <span id="highscore">0</span></p>
+    <p>Per Click: <span id="perClick">1</span> $AIR</p>
+  </div>
+  <button onclick="restartGame()">Restart</button>
 
-  <audio id="clickSound" src="https://www.soundjay.com/buttons/sounds/button-29.mp3" preload="auto"></audio>
+  <audio id="click-sound" src="https://freesound.org/data/previews/341/341695_6262466-lq.mp3"></audio>
 
   <script>
-    let count = 0;
-    let valuePerClick = 1;
-    let timeLeft = 60;
-    let gameStarted = false;
-    const clickSound = document.getElementById("clickSound");
+    let score = 0;
+    let highscore = localStorage.getItem("highscore") || 0;
+    let perClick = 1;
+    let time = 60;
+    let interval;
+    let started = false;
 
-    const coinDisplay = document.getElementById("coin");
-    const timerDisplay = document.getElementById("timer");
-    const highScoreDisplay = document.getElementById("highScore");
+    const scoreEl = document.getElementById("score");
+    const timeEl = document.getElementById("time");
+    const perClickEl = document.getElementById("perClick");
+    const highscoreEl = document.getElementById("highscore");
+    const sound = document.getElementById("click-sound");
 
-    const savedHighScore = localStorage.getItem("airHighScore");
-    if (savedHighScore) highScoreDisplay.innerText = savedHighScore;
+    highscoreEl.textContent = highscore;
 
-    document.getElementById("clickImage").addEventListener("click", () => {
-      if (timeLeft <= 0) return;
-      if (!gameStarted) {
-        gameStarted = true;
-        startTimer();
+    document.getElementById("click-image").addEventListener("click", () => {
+      if (!started) startGame();
+
+      score += perClick;
+      scoreEl.textContent = score;
+      sound.currentTime = 0;
+      sound.play();
+
+      // Upgrade after 5 total clicks
+      if (score >= 5 && perClick === 1) {
+        perClick = 2;
+        perClickEl.textContent = perClick;
       }
-      clickSound.currentTime = 0;
-      clickSound.play();
-      count += valuePerClick;
-      coinDisplay.innerText = `${count} $AIR`;
     });
 
-    function upgrade() {
-      valuePerClick = 2;
-    }
-
-    function startTimer() {
-      const interval = setInterval(() => {
-        timeLeft--;
-        timerDisplay.innerText = `⏱️ ${timeLeft} detik`;
-
-        if (timeLeft <= 0) {
+    function startGame() {
+      started = true;
+      interval = setInterval(() => {
+        time--;
+        timeEl.textContent = time;
+        if (time <= 0) {
           clearInterval(interval);
-          timerDisplay.innerText = "⏱️ Waktu habis!";
-          if (count > (parseInt(savedHighScore) || 0)) {
-            localStorage.setItem("airHighScore", count);
-            highScoreDisplay.innerText = count;
+          if (score > highscore) {
+            localStorage.setItem("highscore", score);
+            highscoreEl.textContent = score;
           }
         }
       }, 1000);
     }
 
     function restartGame() {
-      location.reload();
+      clearInterval(interval);
+      score = 0;
+      time = 60;
+      perClick = 1;
+      scoreEl.textContent = score;
+      timeEl.textContent = time;
+      perClickEl.textContent = perClick;
+      started = false;
     }
   </script>
 </body>
